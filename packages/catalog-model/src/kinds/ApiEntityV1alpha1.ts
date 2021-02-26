@@ -14,17 +14,25 @@
  * limitations under the License.
  */
 
-import type { Entity } from '../entity/Entity';
+import type { Entity, EntityMeta } from '../entity/Entity';
 import schema from '../schema/kinds/API.v1alpha1.schema.json';
 import entitySchema from '../schema/Entity.schema.json';
 import entityMetaSchema from '../schema/EntityMeta.schema.json';
 import commonSchema from '../schema/shared/common.schema.json';
 import { ajvCompiledJsonSchemaValidator } from './util';
 
+interface CustomEntityMeta extends EntityMeta {
+  capabilities?: string[];
+}
+
+type CustomEntity = Omit<Entity, 'metadata'> & {
+  metadata: CustomEntityMeta;
+};
+
 const API_VERSION = ['backstage.io/v1alpha1', 'backstage.io/v1beta1'] as const;
 const KIND = 'API' as const;
 
-export interface ApiEntityV1alpha1 extends Entity {
+export interface ApiEntityV1alpha1 extends CustomEntity {
   apiVersion: typeof API_VERSION[number];
   kind: typeof KIND;
   spec: {

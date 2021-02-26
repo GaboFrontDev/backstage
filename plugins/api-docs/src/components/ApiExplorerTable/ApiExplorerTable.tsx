@@ -62,14 +62,9 @@ const columns: TableColumn<EntityRow>[] = [
     ),
   },
   {
-    title: 'System',
-    field: 'resolved.partOfSystemRelationTitle',
-    render: ({ resolved }) => (
-      <EntityRefLinks
-        entityRefs={resolved.partOfSystemRelations}
-        defaultKind="system"
-      />
-    ),
+    title: 'Type',
+    field: 'entity.spec.type',
+    render: ({ entity }) => <ApiTypeTitle apiEntity={entity} />,
   },
   {
     title: 'Owner',
@@ -82,13 +77,35 @@ const columns: TableColumn<EntityRow>[] = [
     ),
   },
   {
-    title: 'Lifecycle',
-    field: 'entity.spec.lifecycle',
+    title: 'Domain',
+    field: 'entity.metadata.domain',
   },
   {
-    title: 'Type',
-    field: 'entity.spec.type',
-    render: ({ entity }) => <ApiTypeTitle apiEntity={entity} />,
+    title: 'Capabilities',
+    field: 'entity.metadata.capabilities',
+    cellStyle: {
+      padding: '0px 16px 0px 20px',
+    },
+    render: ({ entity }) => (
+      <>
+        {entity.metadata.capabilities &&
+          Array.isArray(entity.metadata.capabilities) &&
+          entity.metadata.capabilities.map((t: string) => (
+            <Chip
+              //@ts-ignore
+              key={t}
+              label={t}
+              size="small"
+              variant="outlined"
+              style={{ marginBottom: '0px' }}
+            />
+          ))}
+      </>
+    ),
+  },
+  {
+    title: 'Lifecycle',
+    field: 'entity.spec.lifecycle',
   },
   {
     title: 'Description',
@@ -101,6 +118,7 @@ const columns: TableColumn<EntityRow>[] = [
     ),
     width: 'auto',
   },
+
   {
     title: 'Tags',
     field: 'entity.metadata.tags',
@@ -137,6 +155,15 @@ const filters: TableFilter[] = [
     column: 'Lifecycle',
     type: 'multiple-select',
   },
+  {
+    column: 'Capabilities',
+    type: 'multiple-select',
+  },
+  {
+    column: 'Domain',
+    type: 'multiple-select',
+  },
+
   {
     column: 'Tags',
     type: 'checkbox-tree',
