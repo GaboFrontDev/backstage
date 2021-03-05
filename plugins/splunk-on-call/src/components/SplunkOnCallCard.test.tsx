@@ -50,7 +50,7 @@ const mockSplunkOnCallApi: Partial<SplunkOnCallClient> = {
 
 const configApi: ConfigApi = new ConfigReader({
   splunkOnCall: {
-    username: MOCKED_USER.username,
+    eventsRestEndpoint: 'EXAMPLE_REST_ENDPOINT',
   },
 });
 
@@ -91,7 +91,10 @@ describe('SplunkOnCallCard', () => {
     );
     await waitFor(() => !queryByTestId('progress'));
     expect(getByText('Create Incident')).toBeInTheDocument();
-    expect(getByText('Nice! No incidents found!')).toBeInTheDocument();
+    await waitFor(
+      () => expect(getByText('Nice! No incidents found!')).toBeInTheDocument(),
+      { timeout: 2000 },
+    );
     expect(getByText('Empty escalation policy')).toBeInTheDocument();
   });
 
@@ -132,12 +135,13 @@ describe('SplunkOnCallCard', () => {
       ),
     ).toBeInTheDocument();
   });
+
   it('opens the dialog when trigger button is clicked', async () => {
     mockSplunkOnCallApi.getUsers = jest
       .fn()
       .mockImplementationOnce(async () => [MOCKED_USER]);
 
-    const { getByText, queryByTestId, getByTestId, getByRole } = render(
+    const { getByText, queryByTestId, getByRole } = render(
       wrapInTestApp(
         <ApiProvider apis={apis}>
           <SplunkOnCallCard entity={entity} />
@@ -146,7 +150,7 @@ describe('SplunkOnCallCard', () => {
     );
     await waitFor(() => !queryByTestId('progress'));
     expect(getByText('Create Incident')).toBeInTheDocument();
-    const triggerButton = getByTestId('trigger-button');
+    const triggerButton = getByText('Create Incident');
     await act(async () => {
       fireEvent.click(triggerButton);
     });

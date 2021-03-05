@@ -63,7 +63,7 @@ export async function createRouter({
         entityName,
       );
 
-      res.send(techdocsMetadata);
+      res.json(techdocsMetadata);
     } catch (err) {
       logger.error(
         `Unable to get metadata for ${entityName.namespace}/${entityName.name} with error ${err}`,
@@ -82,14 +82,18 @@ export async function createRouter({
     const { kind, namespace, name } = req.params;
 
     try {
+      const token = getBearerToken(req.headers.authorization);
       const entity = (await (
         await fetch(
           `${catalogUrl}/entities/by-name/${kind}/${namespace}/${name}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          },
         )
       ).json()) as Entity;
 
       const locationMetadata = getLocationForEntity(entity);
-      res.send({ ...entity, locationMetadata });
+      res.json({ ...entity, locationMetadata });
     } catch (err) {
       logger.info(
         `Unable to get metadata for ${kind}/${namespace}/${name} with error ${err}`,
@@ -104,12 +108,15 @@ export async function createRouter({
     const { kind, namespace, name } = req.params;
     const storageUrl =
       config.getOptionalString('techdocs.storageUrl') ??
-      `${await discovery.getBaseUrl('techdocs')}/static/docs`;
+      `${await discovery.getExternalBaseUrl('techdocs')}/static/docs`;
 
     const catalogUrl = await discovery.getBaseUrl('catalog');
     const triple = [kind, namespace, name].map(encodeURIComponent).join('/');
 
-    const catalogRes = await fetch(`${catalogUrl}/entities/by-name/${triple}`);
+    const token = getBearerToken(req.headers.authorization);
+    const catalogRes = await fetch(`${catalogUrl}/entities/by-name/${triple}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     if (!catalogRes.ok) {
       const catalogResText = await catalogRes.text();
       res.status(catalogRes.status);
@@ -148,6 +155,7 @@ export async function createRouter({
           break;
         case 'awsS3':
         case 'azureBlobStorage':
+        case 'openStackSwift':
         case 'googleGcs':
           // This block should be valid for all external storage implementations. So no need to duplicate in future,
           // add the publisher type in the list here.
@@ -201,4 +209,8 @@ export async function createRouter({
   router.use('/static/docs', publisher.docsRouter());
 
   return router;
+}
+
+function getBearerToken(header?: string): string | undefined {
+  return header?.match(/(?:Bearer)\s+(\S+)/i)?.[1];
 }
